@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Compteur Scrabble</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        tr:hover {background-color:#f5f5f5;}
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            background-color: #0d2031;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #403fa0;
+        }
+        .modal {
+          display: none; 
+          position: fixed; 
+          z-index: 1; 
+          left: 0;
+          top: 0;
+          width: 100%; 
+          height: 100%; 
+          overflow: auto; 
+          background-color: rgba(0,0,0,0.4); 
+      }
+
+      .modal-content {
+          background-color:#fefefe ;
+          margin:auto ;
+          padding:20 px ;
+          border:solid ;
+          width:auto ;
+      }
+
+      .close {
+          color:#aaa ;
+          float:right ;
+          font-size:28 px ;
+          font-weight:bold ;
+      }
+
+      .close:hover,
+      .close:focus {
+          color:black ;
+          text-decoration:none ;
+          cursor:pointer ;
+      }
+    </style>
+</head>
+<body>
+    <h1>Compteur Scrabble</h1>
+    <p>Entrer les noms des jouers</p>
+    <input type="text" id="playerName" onkeydown="if (event.keyCode == 13) addPlayer()">
+    <button onclick="addPlayer()">Add Player</button>
+    <br><br>
+    <table id="scoreTable">
+        <tr>
+            <th>Name</th>
+            <th>Score</th>
+        </tr>
+    </table>
+    <br><br>
+    <p>Entrer le score maximal de la partie:</p>
+    <input type="number" id="maxScore">
+    <br><br>
+
+    <!-- Timer functionality -->
+    <p>Entrer la durée du chronomètre (en secondes):</p>
+    <input type="number" id="timerDuration">
+    <br><br>
+    <!-- <button onclick="startTimer()">Start Timer</button> -->
+    <br><br>
+    <div id="timerDiv" style="display:none;">
+        <p>chronomètre:<span id="timeRemaining"></span></p> 
+    </div>
+
+    <!-- End of timer functionality -->
+
+    <!-- Timer sound -->
+    <audio id="timerSound" src="son.wav"></audio>
+
+    <!-- End of timer sound -->
+
+    <button onclick="startGame()">Start Game</button>
+    <br><br>
+    <div id="gameDiv" style="display:none;">
+        <p>Please enter the score for player :<h4><span id="currentPlayerName"></span>:</h4></p>
+        <input type="number" id="playerScore" onkeydown="if (event.keyCode == 13) addScore()">
+        <button onclick="addScore()">Add Score</button>
+        <br><br>
+        <button onclick="nextPlayer()">Next Player</button>
+        <br><br>
+        <button onclick="showScores()">Voir les scores</button>
+    </div>
+
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+      <!-- Modal content -->
+      <div class="modal-content">
+        <span class="close">×</span>
+        <h2>Scores:</h2>
+        <div id="allScores"></div>
+      </div>
+
+   </div>
+
+   <!-- Timer functionality -->
+   <script type="text/javascript">
+       var timerDuration = null;
+       var timeRemaining = null;
+       var timerInterval = null;
+
+       function startTimer() {
+           timerDuration = parseInt(document.getElementById("timerDuration").value);
+           if (isNaN(timerDuration)) {
+               alert("Please enter a valid timer duration.");
+               return;
+           }
+           timeRemaining = timerDuration;
+           document.getElementById("timeRemaining").innerHTML = timeRemaining;
+           document.getElementById("timerDiv").style.display = "block";
+           if (timerInterval) {
+               clearInterval(timerInterval);
+           }
+           timerInterval = setInterval(updateTimer, 1000);
+       }
+
+       function updateTimer() {
+           timeRemaining--;
+           document.getElementById("timeRemaining").innerHTML = timeRemaining;
+           if (timeRemaining <= 0) {
+               clearInterval(timerInterval);
+               // Play timer sound
+               document.getElementById("timerSound").play();
+               alert("Time's up!");
+               nextPlayer();
+               startTimer();
+           }
+       }
+   </script>
+   <!-- End of timer functionality -->
+
+   <script type="text/javascript">
+       var players = [];
+       var currentPlayer = 0;
+       var maxScore = null;
+
+       function addPlayer() {
+           var playerName = document.getElementById("playerName").value;
+           players.push({ name: playerName, score: 0, scores : [] });
+           document.getElementById("playerName").value = "";
+           updateTable();
+       }
+
+       function updateTable() {
+           var table = document.getElementById("scoreTable");
+           table.innerHTML = "<tr><th>Name</th><th>Score</th></tr>";
+           for (var i = 0; i < players.length; i++) {
+               var row = table.insertRow(i + 1);
+               var nameCell = row.insertCell(0);
+               var scoreCell = row.insertCell(1);
+               nameCell.innerHTML = players[i].name;
+               scoreCell.innerHTML = players[i].score;
+           }
+       }
+
+       function startGame() {
+         maxScore = parseInt(document.getElementById("maxScore").value);
+         if (isNaN(maxScore)) {
+             alert("Please enter a valid maximum score.");
+             return;
+         }
+         if (players.length == 0) {
+             alert("Please enter at least one player name.");
+             return;
+         }
+         document.getElementById("gameDiv").style.display = "block";
+         updateCurrentPlayerName();
+         startTimer();
+     }
+
+     function addScore() {
+         var score = parseInt(document.getElementById("playerScore").value);
+         if (isNaN(score)) {
+             alert("Please enter a valid number.");
+             return;
+         }
+         players[currentPlayer].score += score;
+         players[currentPlayer].scores.push(score);
+         document.getElementById("playerScore").value = "";
+         updateTable();
+         checkForWinner();
+         nextPlayer();
+         startTimer();
+     }
+
+     function checkForWinner() {
+         if (players[currentPlayer].score >= maxScore) {
+             alert(players[currentPlayer].name + " has won the game! Congratulations!");
+             // Add custom styles or animations here
+         }
+     }
+
+     function nextPlayer() {
+         currentPlayer++;
+         if (currentPlayer >= players.length) {
+             currentPlayer = 0;
+         }
+         document.getElementById("playerScore").value = "";
+         updateCurrentPlayerName();
+         startTimer();
+     }
+
+     function updateCurrentPlayerName() {
+       document.getElementById("currentPlayerName").innerHTML = players[currentPlayer].name; 
+   }
+
+   function showScores() {
+       var allScoresDiv = document.getElementById("allScores");
+       allScoresDiv.innerHTML = "";
+       for (var i = 0; i < players.length; i++) {
+           var playerScores = "<p>" + players[i].name + ": " + players[i].scores.join(", ") + "</p>";
+           allScoresDiv.innerHTML += playerScores;
+       }
+       modal.style.display = "block";
+   }
+
+   // Get the modal
+   var modal = document.getElementById("myModal");
+
+   // Get the <span> element that closes the modal
+   var span = document.getElementsByClassName("close")[0];
+
+   // When the user clicks on <span> (x), close the modal
+   span.onclick = function() {
+       modal.style.display = "none";
+   }
+
+   // When the user clicks anywhere outside of the modal, close it
+   window.onclick = function(event) {
+       if (event.target == modal) {
+           modal.style.display = "none";
+       }
+   }
+</script>
+
+</body>
+</html>
+
